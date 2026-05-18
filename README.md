@@ -33,9 +33,9 @@ npm install
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173` and proxies `/api` to the Quater
-backend at `http://localhost:8000`. The frontend hot reloads independently. The
-backend does not serve the frontend.
+The frontend runs at `http://localhost:5173` and calls the Quater backend
+directly through `VITE_API_BASE_URL`, which defaults to `http://localhost:8000`.
+The frontend hot reloads independently. The backend does not serve the frontend.
 
 For local hacking, `FRUSTRATEDAI_AUTO_CREATE_TABLES=1` can create tables at
 startup. For production, set it to `0` and run Alembic migrations during deploy.

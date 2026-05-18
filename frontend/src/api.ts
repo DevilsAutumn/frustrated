@@ -35,7 +35,15 @@ type RequestOptions = {
   body?: unknown
 }
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+function normalizeApiBaseUrl(value: string | undefined): string {
+  const trimmed = value?.trim().replace(/\/$/, '') || 'http://localhost:8000'
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+  return `https://${trimmed}`
+}
+
+const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)
 
 async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {
