@@ -160,3 +160,17 @@ def test_settings_normalize_railway_postgres_url(monkeypatch: pytest.MonkeyPatch
     settings = Settings.from_env()
 
     assert settings.database_url == "postgresql+asyncpg://user:pass@host:5432/db"
+
+
+def test_settings_normalize_railway_cors_origin(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        "FRUSTRATEDAI_CORS_ALLOWED_ORIGINS",
+        "authentic-emotion-production.up.railway.app,http://localhost:5173",
+    )
+
+    settings = Settings.from_env()
+
+    assert settings.cors_allowed_origins == (
+        "https://authentic-emotion-production.up.railway.app",
+        "http://localhost:5173",
+    )

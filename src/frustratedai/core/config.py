@@ -12,6 +12,18 @@ def _csv(name: str, default: str) -> tuple[str, ...]:
     return tuple(value.strip() for value in os.getenv(name, default).split(",") if value.strip())
 
 
+def _origin(value: str) -> str:
+    if value == "*" or value.startswith(("http://", "https://")):
+        return value
+    if value.startswith(("localhost", "127.0.0.1")):
+        return f"http://{value}"
+    return f"https://{value}"
+
+
+def _cors_origins(name: str, default: str) -> tuple[str, ...]:
+    return tuple(_origin(value) for value in _csv(name, default))
+
+
 def _database_url(value: str) -> str:
     if value.startswith("postgresql://"):
         return value.replace("postgresql://", "postgresql+asyncpg://", 1)
@@ -37,7 +49,7 @@ class Settings:
                 )
             ),
             allowed_hosts=_csv("FRUSTRATEDAI_ALLOWED_HOSTS", "localhost,127.0.0.1"),
-            cors_allowed_origins=_csv(
+            cors_allowed_origins=_cors_origins(
                 "FRUSTRATEDAI_CORS_ALLOWED_ORIGINS",
                 "http://localhost:5173,http://127.0.0.1:5173",
             ),
