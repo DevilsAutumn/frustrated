@@ -10,6 +10,10 @@ export default defineConfig({
       '/api': 'http://127.0.0.1:8000',
     },
   },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: true,
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
