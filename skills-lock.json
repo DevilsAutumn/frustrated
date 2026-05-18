@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "skills": {
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": "skill/SKILL.md",
+      "computedHash": "ada9c434d56c794352ccd5c7a6901e5ebb4b7f3b7fe42e8c17c2c4b96c3735c8"
+    },
+    "quater-framework": {
+      "source": "DevilsAutumn/quater",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "agent-skills/quater-framework/SKILL.md",
+      "computedHash": "21f10404bcbfec48447b168a1d5405ea2bb3acea0b6fba2719ff9c7fd7ccb698"
+    }
+  }
+}
