@@ -6,7 +6,6 @@ from quater import Body, Header, HTTPError, JSONResponse, Quater, Request
 
 from frustratedai.api.auth import extract_bearer
 from frustratedai.api.dependencies import auth_service, frustration_service
-from frustratedai.api.static import frontend_asset, frontend_index
 from frustratedai.schemas import (
     AgentFrustrationRequest,
     AuthResponse,
@@ -28,6 +27,16 @@ AUTHORIZATION_HEADER = Header(default=None, alias="Authorization")
 
 
 def register_routes(app: Quater, *, agent_auth: Callable) -> None:
+    @app.get("/", description="Backend service metadata.")
+    async def root() -> dict[str, object]:
+        return {
+            "product": "FrustratedAI",
+            "service": "api",
+            "status": "ok",
+            "docs": "/api/docs",
+            "openapi": "/api/openapi.json",
+        }
+
     @app.get("/api/health", description="Check API health.")
     async def health() -> dict[str, str]:
         return {"status": "ok", "product": "FrustratedAI"}
@@ -159,14 +168,6 @@ def register_routes(app: Quater, *, agent_auth: Callable) -> None:
     )
     async def stats(frustrations: FrustrationService):
         return await frustrations.stats()
-
-    @app.get("/")
-    async def serve_index():
-        return frontend_index()
-
-    @app.get("/assets/{asset_name}")
-    async def serve_asset(asset_name: str):
-        return frontend_asset(asset_name)
 
 
 async def require_session(auth: AuthService, authorization: str | None):

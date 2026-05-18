@@ -136,13 +136,19 @@ async def test_reactions_increment(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_serves_built_frontend(tmp_path: Path) -> None:
+async def test_root_returns_backend_metadata(tmp_path: Path) -> None:
     client = make_client(tmp_path)
     await client.startup()
     try:
         response = await client.get("/")
 
         assert response.status_code == 200
-        assert "FrustratedAI" in response.text
+        assert response.json() == {
+            "product": "FrustratedAI",
+            "service": "api",
+            "status": "ok",
+            "docs": "/api/docs",
+            "openapi": "/api/openapi.json",
+        }
     finally:
         await client.shutdown()

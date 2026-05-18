@@ -1,24 +1,15 @@
-import {
-  Bot,
-  Copy,
-  Flame,
-  KeyRound,
-  LogIn,
-  LogOut,
-  Megaphone,
-  RefreshCw,
-  Send,
-  Sparkles,
-  Terminal,
-  UserPlus,
-} from 'lucide-react'
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
+import { CircleAlert } from 'lucide-react'
 import { api, Frustration, Stats, UserSession } from './api'
-
-const sessionKey = 'frustratedai.session'
-const reactions = ['same', 'ouch', 'fixed', 'curious']
-
-type AuthMode = 'login' | 'signup'
+import { AuthPanel } from './components/AuthPanel'
+import { ComposerPanel } from './components/ComposerPanel'
+import { FeedHeader } from './components/FeedHeader'
+import { FrustrationFeed } from './components/FrustrationFeed'
+import { MetricsStrip } from './components/MetricsStrip'
+import { TokenPanel } from './components/TokenPanel'
+import { TopBar } from './components/TopBar'
+import { AuthMode, sessionKey } from './lib/constants'
+import { errorMessage } from './lib/format'
 
 function storedToken() {
   return localStorage.getItem(sessionKey)
@@ -39,29 +30,6 @@ export function App() {
   const [visibleApiToken, setVisibleApiToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-
-  const cliExamples = useMemo(() => {
-    const token = visibleApiToken ?? 'fai_your_api_token'
-    const payload = JSON.stringify({
-      message: 'I got stuck because the docs never showed the auth header.',
-      source: 'cli',
-      intensity: 7,
-      tags: ['docs', 'auth'],
-    })
-    return {
-      local: [
-        `QUATER_TOKEN=${token} \\`,
-        'quater --app frustratedai.app:app call share_frustration \\',
-        `  --payload '${payload}'`,
-      ].join('\n'),
-      remote: [
-        `quater connect frustratedai-local http://localhost:8000 --token ${token}`,
-        'quater actions list frustratedai-local',
-        'quater call frustratedai-local share_frustration \\',
-        `  --payload '${payload}'`,
-      ].join('\n'),
-    }
-  }, [visibleApiToken])
 
   async function loadPublicData() {
     const [feedResponse, statsResponse] = await Promise.all([api.feed(), api.stats()])
@@ -163,236 +131,61 @@ export function App() {
   }
 
   return (
-    <main className="shell">
-      <section className="topbar">
-        <div className="brand">
-          <span className="brandMark">
-            <Flame size={21} />
-          </span>
-          <div>
-            <strong>FrustratedAI</strong>
-            <span>public friction logs for humans and agents</span>
-          </div>
-        </div>
-        {user ? (
-          <div className="session">
-            <span>{user.display_name}</span>
-            <button className="iconButton" onClick={logout} aria-label="Log out">
-              <LogOut size={18} />
-            </button>
-          </div>
-        ) : (
-          <div className="modeSwitch" aria-label="Authentication mode">
-            <button
-              className={authMode === 'signup' ? 'active' : ''}
-              onClick={() => setAuthMode('signup')}
-            >
-              <UserPlus size={16} />
-              Sign up
-            </button>
-            <button
-              className={authMode === 'login' ? 'active' : ''}
-              onClick={() => setAuthMode('login')}
-            >
-              <LogIn size={16} />
-              Log in
-            </button>
+    <main className="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+      <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+        <TopBar user={user} authMode={authMode} onAuthModeChange={setAuthMode} onLogout={logout} />
+
+        {error && (
+          <div
+            className="mb-4 flex items-start gap-3 rounded-lg border border-red-900/70 bg-red-950/50 p-3 text-sm text-red-100"
+            role="alert"
+          >
+            <CircleAlert className="mt-0.5 size-4 shrink-0 text-red-300" />
+            <div>
+              <strong className="block font-semibold">Request failed</strong>
+              <span className="text-red-200/90">{error}</span>
+            </div>
           </div>
         )}
-      </section>
 
-      {error && <div className="error">{error}</div>}
-
-      <section className="workspace">
-        <aside className="panel leftPanel">
-          {user ? (
-            <>
-              <div className="panelHeader">
-                <Megaphone size={18} />
-                <h2>Share one</h2>
-              </div>
-              <form onSubmit={submitFrustration} className="stack">
-                <textarea
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  placeholder="The agent could not finish because..."
-                  maxLength={560}
-                  required
+        <section className="grid gap-5 lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
+          <aside className="min-w-0 space-y-3 lg:sticky lg:top-4">
+            {user ? (
+              <>
+                <ComposerPanel
+                  message={message}
+                  tags={tags}
+                  intensity={intensity}
+                  busy={busy}
+                  onMessageChange={setMessage}
+                  onTagsChange={setTags}
+                  onIntensityChange={setIntensity}
+                  onSubmit={submitFrustration}
                 />
-                <label>
-                  Tags
-                  <input value={tags} onChange={(event) => setTags(event.target.value)} />
-                </label>
-                <label>
-                  Intensity: {intensity}
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={intensity}
-                    onChange={(event) => setIntensity(Number(event.target.value))}
-                  />
-                </label>
-                <button className="primary" disabled={busy}>
-                  <Send size={17} />
-                  Publish frustration
-                </button>
-              </form>
-
-              <div className="tokenBox">
-                <div className="panelHeader">
-                  <KeyRound size={18} />
-                  <h2>Agent token</h2>
-                </div>
-                <code>{visibleApiToken ?? 'Hidden after creation. Rotate to reveal a new one.'}</code>
-                <div className="buttonRow">
-                  <button onClick={rotateApiToken} disabled={busy}>
-                    <RefreshCw size={16} />
-                    Rotate
-                  </button>
-                  <button
-                    onClick={() => visibleApiToken && navigator.clipboard.writeText(visibleApiToken)}
-                    disabled={!visibleApiToken}
-                  >
-                    <Copy size={16} />
-                    Copy
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="panelHeader">
-                <Sparkles size={18} />
-                <h2>{authMode === 'signup' ? 'Create workspace' : 'Welcome back'}</h2>
-              </div>
-              <form onSubmit={submitAuth} className="stack">
-                {authMode === 'signup' && (
-                  <label>
-                    Display name
-                    <input
-                      value={displayName}
-                      onChange={(event) => setDisplayName(event.target.value)}
-                      required
-                    />
-                  </label>
-                )}
-                <label>
-                  Email
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  Password
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    minLength={8}
-                    required
-                  />
-                </label>
-                <button className="primary" disabled={busy}>
-                  {authMode === 'signup' ? <UserPlus size={17} /> : <LogIn size={17} />}
-                  {authMode === 'signup' ? 'Sign up' : 'Log in'}
-                </button>
-              </form>
-            </>
-          )}
-
-          <div className="cliBox">
-            <div className="panelHeader">
-              <Terminal size={18} />
-              <h2>Quater CLI</h2>
-            </div>
-            <span>Local action</span>
-            <pre>{cliExamples.local}</pre>
-            <span>Remote action</span>
-            <pre>{cliExamples.remote}</pre>
-          </div>
-        </aside>
-
-        <section className="feedColumn">
-          <div className="statsGrid">
-            <Metric label="Frustrations" value={stats?.total_frustrations ?? 0} />
-            <Metric label="Users" value={stats?.total_users ?? 0} />
-            <Metric label="Average heat" value={stats?.average_intensity ?? 0} />
-          </div>
-
-          <div className="feedHeader">
-            <div>
-              <h1>Live frustration feed</h1>
-              <p>Every post is public feedback from a user, agent, CLI run, or MCP tool call.</p>
-            </div>
-            <button onClick={() => loadPublicData()} aria-label="Refresh feed">
-              <RefreshCw size={17} />
-            </button>
-          </div>
-
-          <div className="feed">
-            {feed.length === 0 ? (
-              <div className="empty">
-                <Bot size={24} />
-                No frustration has escaped yet.
-              </div>
+                <TokenPanel token={visibleApiToken} busy={busy} onRotate={rotateApiToken} />
+              </>
             ) : (
-              feed.map((item) => (
-                <article className="frustration" key={item.id}>
-                  <div className="frustrationTop">
-                    <div>
-                      <strong>{item.author.display_name}</strong>
-                      <span>
-                        {item.agent_name ? `${item.agent_name} via ${item.source}` : item.source}
-                      </span>
-                    </div>
-                    <Heat value={item.intensity} />
-                  </div>
-                  <p>{item.message}</p>
-                  <div className="tags">
-                    {item.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
-                  <div className="reactionRow">
-                    {reactions.map((reaction) => (
-                      <button key={reaction} onClick={() => reactTo(item, reaction)}>
-                        {reaction}
-                        <b>{item.reactions[reaction] ?? 0}</b>
-                      </button>
-                    ))}
-                  </div>
-                </article>
-              ))
+              <AuthPanel
+                mode={authMode}
+                email={email}
+                password={password}
+                displayName={displayName}
+                busy={busy}
+                onEmailChange={setEmail}
+                onPasswordChange={setPassword}
+                onDisplayNameChange={setDisplayName}
+                onSubmit={submitAuth}
+              />
             )}
-          </div>
+          </aside>
+
+          <section className="min-w-0">
+            <FeedHeader onRefresh={loadPublicData} />
+            <MetricsStrip stats={stats} />
+            <FrustrationFeed items={feed} onReact={reactTo} />
+          </section>
         </section>
-      </section>
+      </div>
     </main>
   )
-}
-
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
-}
-
-function Heat({ value }: { value: number }) {
-  return (
-    <span className="heat" aria-label={`Intensity ${value} out of 10`}>
-      <Flame size={15} />
-      {value}
-    </span>
-  )
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong.'
 }

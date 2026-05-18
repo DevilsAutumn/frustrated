@@ -1,4 +1,4 @@
-"""FrustratedAI package."""
+"""FrustratedAI backend application."""
 
 from frustratedai.app import create_app
 
