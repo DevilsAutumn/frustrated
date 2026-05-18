@@ -152,3 +152,11 @@ async def test_root_returns_backend_metadata(tmp_path: Path) -> None:
         }
     finally:
         await client.shutdown()
+
+
+def test_settings_normalize_railway_postgres_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@host:5432/db")
+
+    settings = Settings.from_env()
+
+    assert settings.database_url == "postgresql+asyncpg://user:pass@host:5432/db"

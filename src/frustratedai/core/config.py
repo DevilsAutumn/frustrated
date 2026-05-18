@@ -12,6 +12,12 @@ def _csv(name: str, default: str) -> tuple[str, ...]:
     return tuple(value.strip() for value in os.getenv(name, default).split(",") if value.strip())
 
 
+def _database_url(value: str) -> str:
+    if value.startswith("postgresql://"):
+        return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return value
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str
@@ -24,9 +30,11 @@ class Settings:
     def from_env(cls) -> Settings:
         debug = os.getenv("FRUSTRATEDAI_DEBUG", "0") == "1"
         return cls(
-            database_url=os.getenv(
-                "DATABASE_URL",
-                "postgresql+asyncpg://frustratedai:frustratedai@localhost:5432/frustratedai",
+            database_url=_database_url(
+                os.getenv(
+                    "DATABASE_URL",
+                    "postgresql+asyncpg://frustratedai:frustratedai@localhost:5432/frustratedai",
+                )
             ),
             allowed_hosts=_csv("FRUSTRATEDAI_ALLOWED_HOSTS", "localhost,127.0.0.1"),
             cors_allowed_origins=_csv(
