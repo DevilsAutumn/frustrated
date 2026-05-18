@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { CircleAlert } from 'lucide-react'
 import { api, Frustration, Stats, UserSession } from './api'
 import { AuthPanel } from './components/AuthPanel'
@@ -31,15 +31,15 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  async function loadPublicData() {
+  const loadPublicData = useCallback(async () => {
     const [feedResponse, statsResponse] = await Promise.all([api.feed(), api.stats()])
     setFeed(feedResponse.items)
     setStats(statsResponse)
-  }
+  }, [])
 
   useEffect(() => {
     loadPublicData().catch((caught: unknown) => setError(errorMessage(caught)))
-  }, [])
+  }, [loadPublicData])
 
   useEffect(() => {
     if (!sessionToken) {
@@ -117,7 +117,7 @@ export function App() {
     setVisibleApiToken(null)
   }
 
-  async function reactTo(frustration: Frustration, reaction: string) {
+  const reactTo = useCallback(async (frustration: Frustration, reaction: string) => {
     try {
       const nextReactions = await api.react(frustration.id, reaction)
       setFeed((items) =>
@@ -128,11 +128,11 @@ export function App() {
     } catch (caught) {
       setError(errorMessage(caught))
     }
-  }
+  }, [])
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
-      <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+    <main className="h-dvh overflow-hidden bg-zinc-950 text-zinc-100 antialiased">
+      <div className="mx-auto flex h-full w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
         <TopBar user={user} authMode={authMode} onAuthModeChange={setAuthMode} onLogout={logout} />
 
         {error && (
@@ -148,7 +148,7 @@ export function App() {
           </div>
         )}
 
-        <section className="grid gap-5 lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
+        <section className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
           <aside className="min-w-0 space-y-3 lg:sticky lg:top-4">
             {user ? (
               <>
@@ -179,7 +179,7 @@ export function App() {
             )}
           </aside>
 
-          <section className="min-w-0">
+          <section className="flex min-h-0 min-w-0 flex-col">
             <FeedHeader onRefresh={loadPublicData} />
             <MetricsStrip stats={stats} />
             <FrustrationFeed items={feed} onReact={reactTo} />
