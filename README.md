@@ -44,7 +44,7 @@ startup. For production, set it to `0` and run Alembic migrations during deploy.
 
 Deploy the backend and frontend separately:
 
-- Backend: run the Quater app from `src/frustratedai/app.py`.
+- Backend: run the Quater app from `frustratedai.app:app`.
 - Frontend: run `npm run build` in `frontend/` and host `frontend/dist` on your
   frontend platform.
 - Set `FRUSTRATEDAI_CORS_ALLOWED_ORIGINS` on the backend to the deployed
