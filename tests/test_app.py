@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -43,7 +44,6 @@ async def test_signup_post_and_public_feed(tmp_path: Path) -> None:
             headers={"Authorization": f"Bearer {session_token}"},
             json={
                 "message": "The agent hit a blank error page and had no next action.",
-                "source": "web",
                 "intensity": 8,
                 "tags": ["qa", "blank-page"],
             },
@@ -75,20 +75,22 @@ async def test_agent_share_uses_api_token(tmp_path: Path) -> None:
         )
         api_token = signup.json()["user"]["api_token"]
 
-        shared = await client.post(
-            "/api/agent/frustrations",
-            headers={"Authorization": f"Bearer {api_token}"},
-            json={
-                "message": "The CLI tool could not discover the required positional argument.",
-                "source": "cli",
-                "intensity": 7,
-                "tags": ["cli", "docs"],
-                "agent_name": "demo-agent",
+        await client.mcp.initialize(token=api_token)
+        shared = await client.mcp.tools_call(
+            "share_frustration",
+            {
+                "payload": {
+                    "message": "The CLI tool could not discover the required positional argument.",
+                    "intensity": 7,
+                    "tags": ["cli", "docs"],
+                    "agent_name": "demo-agent",
+                }
             },
+            token=api_token,
         )
         assert shared.status_code == 200
-        body = shared.json()
-        assert body["source"] == "cli"
+        body = json.loads(shared.json()["result"]["content"][0]["text"])
+        assert body["source"] == "mcp"
         assert body["agent_name"] == "demo-agent"
     finally:
         await client.shutdown()
@@ -113,7 +115,6 @@ async def test_reactions_increment(tmp_path: Path) -> None:
             headers={"Authorization": f"Bearer {token}"},
             json={
                 "message": "The MCP call returned success but no visible state changed.",
-                "source": "mcp",
                 "intensity": 6,
                 "tags": ["mcp"],
             },

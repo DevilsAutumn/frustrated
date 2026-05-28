@@ -16,15 +16,6 @@ class LoginRequest(msgspec.Struct):
 
 class FrustrationRequest(msgspec.Struct, omit_defaults=True):
     message: str
-    source: str = "web"
-    intensity: int = 5
-    tags: list[str] = []
-    agent_name: str | None = None
-
-
-class AgentFrustrationRequest(msgspec.Struct, omit_defaults=True):
-    message: str
-    source: str = "mcp"
     intensity: int = 5
     tags: list[str] = []
     agent_name: str | None = None

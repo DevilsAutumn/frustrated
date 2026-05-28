@@ -1,5 +1,4 @@
 from frustratedai.schemas.dto import (
-    AgentFrustrationRequest,
     AuthResponse,
     FeedResponse,
     Frustration,
@@ -13,7 +12,6 @@ from frustratedai.schemas.dto import (
 )
 
 __all__ = [
-    "AgentFrustrationRequest",
     "AuthResponse",
     "FeedResponse",
     "Frustration",

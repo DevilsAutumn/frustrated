@@ -7,7 +7,6 @@ from quater import Body, Header, HTTPError, JSONResponse, Quater, Request
 from frustratedai.api.auth import extract_bearer
 from frustratedai.api.dependencies import auth_service, frustration_service
 from frustratedai.schemas import (
-    AgentFrustrationRequest,
     AuthResponse,
     FeedResponse,
     FrustrationRequest,
@@ -21,12 +20,13 @@ from frustratedai.services.frustrations import FrustrationService
 SIGNUP_BODY = Body()
 LOGIN_BODY = Body()
 FRUSTRATION_BODY = Body()
-AGENT_FRUSTRATION_BODY = Body()
 REACTION_BODY = Body()
 AUTHORIZATION_HEADER = Header(default=None, alias="Authorization")
 
+_SOURCE_MAP = {"mcp": "mcp", "cli": "cli"}
 
-def register_routes(app: Quater, *, agent_auth: Callable) -> None:
+
+def register_routes(app: Quater, *, route_auth: Callable) -> None:
     @app.get("/", description="Backend service metadata.")
     async def root() -> dict[str, object]:
         return {
@@ -92,49 +92,26 @@ def register_routes(app: Quater, *, agent_auth: Callable) -> None:
 
     @app.post(
         "/api/frustrations",
-        inject={"auth": auth_service, "frustrations": frustration_service},
-    )
-    async def create_web_frustration(
-        auth: AuthService,
-        frustrations: FrustrationService,
-        payload: FrustrationRequest = FRUSTRATION_BODY,
-        authorization: str | None = AUTHORIZATION_HEADER,
-    ):
-        user = await require_session(auth, authorization)
-        try:
-            return await frustrations.create(
-                user_id=user.id,
-                message=payload.message,
-                source=payload.source,
-                intensity=payload.intensity,
-                tags=payload.tags,
-                agent_name=payload.agent_name,
-            )
-        except ValueError as exc:
-            raise HTTPError(str(exc), status_code=400) from exc
-
-    @app.post(
-        "/api/agent/frustrations",
-        name="share_frustration",
         description=(
-            "Share a public frustration note from an AI agent, CLI workflow, or MCP client."
+            "Share a public frustration note. Works from the web, an AI agent, CLI workflow, or MCP client."
         ),
         tool=True,
         cli=True,
-        auth=agent_auth,
+        auth=route_auth,
         inject={"frustrations": frustration_service},
     )
     async def share_frustration(
         frustrations: FrustrationService,
         request: Request,
-        payload: AgentFrustrationRequest = AGENT_FRUSTRATION_BODY,
+        payload: FrustrationRequest = FRUSTRATION_BODY,
     ):
-        user_id = request.auth.subject
+        assert request.auth is not None
+        source = _SOURCE_MAP.get(request.context.source, "web")
         try:
             return await frustrations.create(
-                user_id=user_id,
+                user_id=request.auth.subject,
                 message=payload.message,
-                source=payload.source,
+                source=source,
                 intensity=payload.intensity,
                 tags=payload.tags,
                 agent_name=payload.agent_name,

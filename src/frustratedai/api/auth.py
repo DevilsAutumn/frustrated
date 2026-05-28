@@ -34,3 +34,29 @@ def build_surface_auth(auth_service: AuthService) -> Callable[[AuthRequest], obj
         raise HTTPError("MCP and CLI access requires a valid bearer token.", status_code=401)
 
     return surface_auth
+
+
+def build_route_auth(auth_service: AuthService) -> Callable[[AuthRequest], object]:
+    async def route_auth(request: AuthRequest) -> AuthContext:
+        token = extract_bearer(request.headers.get("authorization"))
+        if not token:
+            raise HTTPError("Authentication required.", status_code=401)
+
+        if request.context.source == "api":
+            user = await auth_service.authenticate_session(token)
+        else:
+            user = await auth_service.authenticate_api_token(token)
+
+        if user is None:
+            raise HTTPError("Authentication required.", status_code=401)
+
+        return AuthContext(
+            subject=user.id,
+            metadata={
+                "email": user.email,
+                "display_name": user.display_name,
+                "path": request.path,
+            },
+        )
+
+    return route_auth

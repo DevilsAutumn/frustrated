@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from quater import CORSConfig, Quater
 
-from frustratedai.api.auth import build_surface_auth
+from frustratedai.api.auth import build_route_auth, build_surface_auth
 from frustratedai.api.routes import register_routes
 from frustratedai.core.config import Settings
 from frustratedai.db.session import DatabaseSessionManager
@@ -16,6 +16,7 @@ def create_app(settings: Settings | None = None) -> Quater:
     auth_service = AuthService(db.sessionmaker)
     frustration_service = FrustrationService(db.sessionmaker)
     surface_auth = build_surface_auth(auth_service)
+    route_auth = build_route_auth(auth_service)
     app = Quater(
         name="frustratedai",
         debug=settings.debug,
@@ -46,7 +47,7 @@ def create_app(settings: Settings | None = None) -> Quater:
     async def shutdown() -> None:
         await db.dispose()
 
-    register_routes(app, agent_auth=surface_auth)
+    register_routes(app, route_auth=route_auth)
     return app
 
 

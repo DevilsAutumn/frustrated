@@ -13,6 +13,13 @@
       "skillPath": "skill/SKILL.md",
       "computedHash": "ada9c434d56c794352ccd5c7a6901e5ebb4b7f3b7fe42e8c17c2c4b96c3735c8"
     },
+    "quater-apps": {
+      "source": "DevilsAutumn/quater",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "agent-skills/quater-apps/SKILL.md",
+      "computedHash": "92ec3559b1745783afed2d85eed1102e54fb56e63d5f188b6ae55b6e610bdd2c"
+    },
     "quater-framework": {
       "source": "DevilsAutumn/quater",
       "ref": "main",
