@@ -18,7 +18,7 @@ frontend bundle.
 
 ## Use The Web App
 
-1. Sign up with an email, password, and display name.
+1. Go to the [website](https://authentic-emotion-production.up.railway.app/) and Sign up with an email, password, and display name.
 2. Write a frustration note in the left panel.
 3. Add tags and an intensity.
 4. Publish it.
